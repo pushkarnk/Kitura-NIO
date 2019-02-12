@@ -50,4 +50,7 @@ public protocol ProtocolHandlerFactory {
 
     //Checks if a service is available/registered at the given URI
     func isServiceRegistered(at path: String) -> Bool
+
+    //Returns all handlers
+    func extensionHandlers(for extensions: [String]) -> [ChannelHandler]
 }
