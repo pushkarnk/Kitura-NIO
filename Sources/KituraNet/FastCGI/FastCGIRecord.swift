@@ -1,10 +1,16 @@
+import Foundation
+
 struct FastCGIRecord {
     let version: UInt8
     let type: UInt8
     let requestId: UInt16
-    var contentLength: UInt16
-    var paddingLength: UInt8
-    var reserved: UInt8
-    var contentData: [UInt8]
-    var paddingData: [UInt8]
+    let contentLength: UInt16
+    let content: FastCGIRecordContent
+}
+
+enum FastCGIRecordContent {
+    case role(UInt16)
+    case status(UInt32, UInt8)
+    case params([[String: String]])
+    case data(Data)
 }
