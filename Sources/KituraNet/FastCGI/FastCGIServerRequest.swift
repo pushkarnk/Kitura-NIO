@@ -83,7 +83,7 @@ public class FastCGIServerRequest: ServerRequest {
     private static let defaultMethod: String = "GET"
 
     /// List of status states
-    private enum Status {
+    enum Status {
         case initial
         case requestStarted
         case headersComplete

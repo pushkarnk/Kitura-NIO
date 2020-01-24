@@ -11,11 +11,13 @@ class FastCGIRecordDecoder: ChannelInboundHandler {
         print("Received some FastCGI stuff!")
 
         let request = self.unwrapInboundIn(data)
-        let data = request.getData(at: 0, length: request.readableBytes) ?? Data()
-        let parser = FastCGIRecordParser(data)
-        let remaining = try! parser.parse()
-        print("remaining  = ", remaining)
-        let record = parser.toFastCGIRecord()
-        context.fireChannelRead(self.wrapInboundOut(record))
+        var remainingData = request.getData(at: 0, length: request.readableBytes)
+        while remainingData != nil {
+            let data = remainingData!
+            let parser = FastCGIRecordParser(data)
+            remainingData = try! parser.parse()
+            let record = parser.toFastCGIRecord()
+            context.fireChannelRead(self.wrapInboundOut(record))
+        }
     }
 }
