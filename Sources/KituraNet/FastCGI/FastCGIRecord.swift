@@ -4,7 +4,6 @@ struct FastCGIRecord {
     let version: UInt8
     let type: UInt8
     let requestId: UInt16
-    let contentLength: UInt16
     let content: FastCGIRecordContent
 }
 

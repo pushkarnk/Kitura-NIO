@@ -92,7 +92,7 @@ public class FastCGIServer: Server {
             .childChannelInitializer { channel in
                 channel.pipeline.addHandler(FastCGIRecordEncoder()).flatMap {
                     channel.pipeline.addHandler(FastCGIRecordDecoder()).flatMap {
-                        channel.pipeline.addHandler(FastCGIRequestHandler())
+                        channel.pipeline.addHandler(FastCGIRequestHandler(self))
                     }
                 }
             }

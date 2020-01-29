@@ -8,7 +8,6 @@ class FastCGIRecordDecoder: ChannelInboundHandler {
 
 
     public func channelRead(context: ChannelHandlerContext, data: NIOAny) {
-        print("Received some FastCGI stuff!")
 
         let request = self.unwrapInboundIn(data)
         var remainingData = request.getData(at: 0, length: request.readableBytes)
