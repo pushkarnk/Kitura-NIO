@@ -22,8 +22,18 @@ import Foundation
     import Darwin
 #endif
 
-class FastCGIRecordCreate {
-    
+protocol FastCGIEncoder {
+    associatedtype OutputType
+
+    init(_ record: FastCGIRecord)
+
+    func encode() throws -> OutputType
+
+}
+
+class FastCGIRecordEncoder: FastCGIEncoder {
+
+    typealias OutputType = Data 
     //
     // Variables
     //
@@ -34,7 +44,23 @@ class FastCGIRecordCreate {
     var requestRole : UInt16 = FastCGI.Constants.FCGI_NO_ROLE
     var keepAlive : Bool = false
     var parameters : [(String,String)] = []
-    
+
+    required init(_ record: FastCGIRecord) {
+        self.recordType = record.type.rawValue
+        self.requestId = record.requestId
+        switch record.content {
+        case .role(let role):
+            self.requestRole = role
+        case .status(_, let protocolStatus):
+            self.protocolStatus = protocolStatus
+        case .params(let paramsDictionary):
+            // Convert all the ["name":"foo", "value":"bar"] dictionaries to tuples of the kind ("foo", "bar")
+            self.parameters = paramsDictionary.compactMap { ($0["name"]!, $0["value"]!) }
+        case .data(let data):
+            self.data = data
+        }
+    }
+
     //
     // Append one or more zero bytes to the provided NSMutableData object
     //
@@ -83,7 +109,7 @@ class FastCGIRecordCreate {
         
         var v : UInt8 = FastCGI.Constants.FASTCGI_PROTOCOL_VERSION
         var t : UInt8 = recordType
-        var requestId : UInt16 = FastCGIRecordCreate.getNetworkByteOrderSmall(from: self.requestId)
+        var requestId : UInt16 = FastCGIRecordEncoder.getNetworkByteOrderSmall(from: self.requestId)
         
         r.append(&v, count: 1)
         r.append(&t, count: 1)
@@ -97,7 +123,7 @@ class FastCGIRecordCreate {
     //
     private func finalizeRequestCompleteRecord(data: inout Data) -> Data {
         
-        var contentLength : UInt16 = FastCGIRecordCreate.getNetworkByteOrderSmall(from: UInt16(8))
+        var contentLength : UInt16 = FastCGIRecordEncoder.getNetworkByteOrderSmall(from: UInt16(8))
         var protocolStatus : UInt8 = self.protocolStatus
         
         // content length
@@ -126,8 +152,8 @@ class FastCGIRecordCreate {
     //
     private func finalizeRequestBeginRecord(data: inout Data) -> Data {
         
-        var contentLength : UInt16 = FastCGIRecordCreate.getNetworkByteOrderSmall(from: 8)
-        var requestRole : UInt16 = FastCGIRecordCreate.getNetworkByteOrderSmall(from: self.requestRole)
+        var contentLength : UInt16 = FastCGIRecordEncoder.getNetworkByteOrderSmall(from: 8)
+        var requestRole : UInt16 = FastCGIRecordEncoder.getNetworkByteOrderSmall(from: self.requestRole)
         var flags : UInt8 = keepAlive ? FastCGI.Constants.FCGI_KEEP_CONN : 0
         
         // content length
@@ -157,7 +183,7 @@ class FastCGIRecordCreate {
     private func writeEncodedLength(length: Int, into: inout Data) {
         
         if length > 127 {
-            var encodedLength : UInt32 = FastCGIRecordCreate.getNetworkByteOrderLarge(from: UInt32(length)) | ~0xffffff7f
+            var encodedLength : UInt32 = FastCGIRecordEncoder.getNetworkByteOrderLarge(from: UInt32(length)) | ~0xffffff7f
             appendBytes(to: &into, bytes: &encodedLength, count: 4)
         }
         else {
@@ -213,7 +239,7 @@ class FastCGIRecordCreate {
     private func finalizeDataRecord(data: inout Data) -> Data {
         
         let contentData = self.data == nil ? Data() : self.data!
-        var contentLength : UInt16 = FastCGIRecordCreate.getNetworkByteOrderSmall(from: UInt16(contentData.count))
+        var contentLength : UInt16 = FastCGIRecordEncoder.getNetworkByteOrderSmall(from: UInt16(contentData.count))
         
         // note that we will align all of our data structures to 8 bytes
         var paddingLength : Int = Int(contentData.count % 8)
@@ -303,7 +329,7 @@ class FastCGIRecordCreate {
     //
     // Generate the record currently contained by the class
     //
-    func create() throws -> Data {
+    func encode() throws -> Data {
         
         // rely on throw to abort if there is an issue
         try recordTest()
@@ -326,5 +352,4 @@ class FastCGIRecordCreate {
         }
         
     }
-    
 }

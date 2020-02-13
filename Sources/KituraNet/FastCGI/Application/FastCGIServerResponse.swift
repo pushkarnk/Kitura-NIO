@@ -93,7 +93,7 @@ public class FastCGIServerResponse: ServerResponse {
         var data = headerData.data(using: .utf8)!
         data.append(buffer)
         let record = FastCGIRecord(version: FastCGI.Constants.FASTCGI_PROTOCOL_VERSION,
-                                   type: FastCGI.Constants.FCGI_STDOUT,
+                                   type: .stdout,
                                    requestId: self.handler.serverRequest?.requestId ?? 0,
                                    content: .data(data))
         _ = channel.writeAndFlush(handler.wrapOutboundOut(record))
@@ -102,13 +102,13 @@ public class FastCGIServerResponse: ServerResponse {
     public func end() throws {
         startResponse()
         let emptyRecord = FastCGIRecord(version: FastCGI.Constants.FASTCGI_PROTOCOL_VERSION, 
-                                        type: FastCGI.Constants.FCGI_STDOUT,
+                                        type: .stdout,
                                         requestId: self.handler.serverRequest?.requestId ?? 0,  
                                         content: .data(Data()))
          _ = channel.write(handler.wrapOutboundOut(emptyRecord))
 
         let endRequestRecord = FastCGIRecord(version: FastCGI.Constants.FASTCGI_PROTOCOL_VERSION, 
-                                             type: FastCGI.Constants.FCGI_END_REQUEST,
+                                             type: .endRequest,
                                              requestId: self.handler.serverRequest?.requestId ?? 0,
                                              content: .status(0, FastCGI.Constants.FCGI_REQUEST_COMPLETE))
         let promise = channel.writeAndFlush(handler.wrapOutboundOut(endRequestRecord))

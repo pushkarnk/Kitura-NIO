@@ -454,7 +454,7 @@ public class FastCGIServerRequest : ServerRequest {
         }
 
         if status == Status.initial &&
-            record.type == FastCGI.Constants.FCGI_BEGIN_REQUEST {
+            record.type == .beginRequest {
 
             // this is a request begin record and we haven't seen any requests
             // in this FastCGIServerRequest object. We're safe to begin parsing.
@@ -463,7 +463,7 @@ public class FastCGIServerRequest : ServerRequest {
             status = Status.requestStarted
 
         }
-        else if record.type == FastCGI.Constants.FCGI_BEGIN_REQUEST {
+        else if record.type == .beginRequest {
 
             // this is another request begin record and we've already received
             // one before now. this is a request to multiplex the connection or
@@ -485,7 +485,7 @@ public class FastCGIServerRequest : ServerRequest {
 
         }
         else if status == Status.requestStarted &&
-            record.type == FastCGI.Constants.FCGI_PARAMS {
+            record.type == .params {
 
             // this is a parameter record
 
@@ -525,7 +525,7 @@ public class FastCGIServerRequest : ServerRequest {
 
         }
         else if status == Status.headersComplete &&
-            record.type == FastCGI.Constants.FCGI_STDIN {
+            record.type == .stdin {
 
             // Headers are complete and we're received STDIN records.
 

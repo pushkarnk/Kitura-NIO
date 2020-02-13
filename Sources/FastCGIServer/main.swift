@@ -39,7 +39,7 @@ let fastCGIServer = FastCGI.createServer()
 fastCGIServer.delegate = HelloWorldPageHandler()
 
 do {
-    try! fastCGIServer.listen(on: 9000)
+    try fastCGIServer.listen(on: 9000)
 } catch {
     print("Failed to start up fastCGI server")
 }

@@ -22,8 +22,23 @@ import Foundation
     import Darwin
 #endif
 
-class FastCGIRecordParser {
-    
+
+protocol FastCGIDecoder {
+    associatedtype InputType
+
+    static func decode(from data: InputType) throws -> [FastCGIRecord]
+}
+
+extension FastCGIDecoder {
+    static func unwrap(_ x: Any) -> InputType {
+        return x as! InputType
+    }
+}
+
+class FastCGIRecordDecoder: FastCGIDecoder {
+
+    typealias InputType = Data
+
     // Variables
     //
     var version : UInt8 = 0
@@ -113,27 +128,10 @@ class FastCGIRecordParser {
     
     // Initialize
     //
-    init(_ data: Data) {
+    required init(_ data: Data) {
         self.buffer = data
     }
 
-    func toFastCGIRecord() -> FastCGIRecord {
-        var content: FastCGIRecordContent
-        switch self.type {
-        case FastCGI.Constants.FCGI_BEGIN_REQUEST:
-            content = .role(self.role) 
-        case FastCGI.Constants.FCGI_END_REQUEST:
-            content = .status(self.appStatus, self.protocolStatus) 
-        case FastCGI.Constants.FCGI_PARAMS:
-            content = .params(self.headers)
-        default:
-            content = .data(self.data ?? Data())
-        }
-        return FastCGIRecord(version: self.version,
-                             type: self.type, 
-                             requestId: self.requestId,
-                             content: content)
-    } 
     //
     // Parse FastCGI Version
     //
@@ -173,7 +171,7 @@ class FastCGIRecordParser {
         let requestIdBytes0 = buffer[try advance()]
         let requestIdBytes = [ requestIdBytes1, requestIdBytes0 ]
         
-        requestId = FastCGIRecordParser.getLocalByteOrderSmall(from: requestIdBytes)
+        requestId = FastCGIRecordDecoder.getLocalByteOrderSmall(from: requestIdBytes)
         
     }
 
@@ -185,7 +183,7 @@ class FastCGIRecordParser {
         let contentLengthBytes0 = buffer[try advance()]
         let contentLengthBytes = [ contentLengthBytes1, contentLengthBytes0 ]
         
-        contentLength = FastCGIRecordParser.getLocalByteOrderSmall(from: contentLengthBytes)
+        contentLength = FastCGIRecordDecoder.getLocalByteOrderSmall(from: contentLengthBytes)
         
     }
     
@@ -203,7 +201,7 @@ class FastCGIRecordParser {
         let roleByte0 = buffer[try advance()]
         let roleBytes = [ roleByte1, roleByte0 ]
         
-        role = FastCGIRecordParser.getLocalByteOrderSmall(from: roleBytes)
+        role = FastCGIRecordDecoder.getLocalByteOrderSmall(from: roleBytes)
         flags = buffer[try advance()]
 
         guard role == FastCGI.Constants.FCGI_RESPONDER else {
@@ -222,7 +220,7 @@ class FastCGIRecordParser {
         let appStatusByte0 = buffer[try advance()]
         let appStatusBytes = [ appStatusByte3, appStatusByte2, appStatusByte1, appStatusByte0 ]
         
-        appStatus = FastCGIRecordParser.getLocalByteOrderLarge(from: appStatusBytes)
+        appStatus = FastCGIRecordDecoder.getLocalByteOrderLarge(from: appStatusBytes)
     
     }
     
@@ -287,7 +285,7 @@ class FastCGIRecordParser {
             let lengthByteB0 : UInt8 = buffer[try advance()]
             let lengthBytes = [ lengthByteB3 & 0x7f, lengthByteB2, lengthByteB1, lengthByteB0 ]
 
-            return Int(FastCGIRecordParser.getLocalByteOrderLarge(from: lengthBytes))
+            return Int(FastCGIRecordDecoder.getLocalByteOrderLarge(from: lengthBytes))
         }
         
     }
@@ -389,9 +387,9 @@ class FastCGIRecordParser {
         
     }
     
-    // Parser the data, return any extra
+    // Parses the data, return any extra
     //
-    func parse() throws -> Data? {
+    func decode() throws -> Data? {
         
         // Make parser go now!
         //
@@ -431,6 +429,28 @@ class FastCGIRecordParser {
         // not part of the parsed record
         return try skipPaddingThenReturn()
     }
-    
-    
+
+    static func decode(from data: Data) -> [FastCGIRecord] {
+        var records: [FastCGIRecord] = []
+        var remainingData: Data? = data
+        while remainingData != nil {
+            let decoder = FastCGIRecordDecoder(remainingData!)
+            remainingData = try! decoder.decode()
+            guard let type = FastCGIRecord.RecordType(rawValue: decoder.type) else { continue }
+            var content: FastCGIRecord.Content
+            switch type {
+            case .beginRequest:
+                content = .role(decoder.role)
+            case .endRequest:
+                content = .status(decoder.appStatus, decoder.protocolStatus)
+            case .params:
+                content = .params(decoder.headers)
+            default:
+                content = .data(decoder.data ?? Data())
+            }
+            records.append(FastCGIRecord(version: decoder.version, type: FastCGIRecord.RecordType(rawValue: decoder.type)!,
+                                        requestId: decoder.requestId, content: content))
+        }
+        return records
+    }
 }

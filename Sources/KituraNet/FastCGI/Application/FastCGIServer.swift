@@ -90,8 +90,8 @@ public class FastCGIServer: Server {
             .serverChannelOption(ChannelOptions.socket(SocketOptionLevel(SOL_SOCKET), SO_REUSEADDR), value: 1)
             .serverChannelOption(ChannelOptions.socket(SocketOptionLevel(SOL_SOCKET), SO_REUSEPORT), value: allowPortReuse ? 1 : 0)
             .childChannelInitializer { channel in
-                channel.pipeline.addHandler(FastCGIRecordEncoder()).flatMap {
-                    channel.pipeline.addHandler(FastCGIRecordDecoder()).flatMap {
+                channel.pipeline.addHandler(FastCGIRecordEncoderHandler<FastCGIRecordEncoder>()).flatMap { _ in
+                    channel.pipeline.addHandler(FastCGIRecordDecoderHandler<FastCGIRecordDecoder>()).flatMap { _ in
                         channel.pipeline.addHandler(FastCGIRequestHandler(self))
                     }
                 }
@@ -111,6 +111,7 @@ public class FastCGIServer: Server {
             throw error
         }
 
+        print("Listening on \(listenerDescription)")
         Log.info("Listening on \(listenerDescription)")
         Log.verbose("Options for \(listenerDescription): maxPendingConnections: \(maxPendingConnections), allowPortReuse: \(self.allowPortReuse)")
 

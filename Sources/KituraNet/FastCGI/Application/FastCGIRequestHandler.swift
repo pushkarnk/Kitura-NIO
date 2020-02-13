@@ -19,21 +19,36 @@ class FastCGIRequestHandler: ChannelInboundHandler {
 
     public func channelRead(context: ChannelHandlerContext, data: NIOAny) {
         let record = self.unwrapInboundIn(data)
-        switch record.content {
-        case .role:
+        switch record.type {
+        case .beginRequest:
+            guard case let .role(_) = record.content else {
+                //report error
+                return
+            }
             serverRequest = FastCGIServerRequest(channel: context.channel)
             serverRequest?.parse(record)
             self.status = Status.requestStarted
-        case .params(_):
+        case .params:
+            guard case let .params(_) = record.content else {
+                //report error
+                return
+            }
             serverRequest?.parse(record) 
             self.status = Status.headersComplete
-        case .status(let appStatus, let protocolStatus):
-            print(appStatus, protocolStatus)
-        case .data(_):
-            self.status = Status.requestComplete
-            serverResponse = FastCGIServerResponse(channel: context.channel, handler: self)
-            let delegate = self.server?.delegate ?? FastCGIDummyServerDelegate()
-            delegate.handle(request: serverRequest!, response: serverResponse!)
+        case .stdin:
+            guard case let .data(data) = record.content else {
+                //report error
+                return
+            }
+            if data.count == 0 {
+                self.status = Status.requestComplete
+                serverResponse = FastCGIServerResponse(channel: context.channel, handler: self)
+                let delegate = self.server?.delegate ?? FastCGIDummyServerDelegate()
+                delegate.handle(request: serverRequest!, response: serverResponse!)
+            }
+        default:
+            //Unexpected record type
+            break
         }
     }
 }
