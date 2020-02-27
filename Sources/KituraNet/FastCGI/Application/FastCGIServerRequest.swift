@@ -508,7 +508,9 @@ public class FastCGIServerRequest : ServerRequest {
             if headers.count > 0 {
                 for pair in headers  {
                     // parse the header we've received
+                    print(">processHeader: \(pair["name"]), \(pair["value"])")
                     processHeader(pair["name"]!, value: pair["value"]!)
+                    print("<processHeader")
                 }
             } else {
                 // no params were received in this parameter record.
@@ -561,7 +563,9 @@ public class FastCGIServerRequest : ServerRequest {
 
     /// Parse the request from FastCGI.
     func parse (_ record: FastCGIRecord) {
+        print("> processRecord")
         try! processRecord(record)
+        print("< processRecord")
     }
 }
 

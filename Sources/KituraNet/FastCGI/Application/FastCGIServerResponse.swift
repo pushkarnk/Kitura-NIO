@@ -78,7 +78,7 @@ public class FastCGIServerResponse: ServerResponse {
         var headerData = ""
 
         // add our status header for FastCGI
-        headerData.append("Status: \(status) \(HTTP.statusCodes[status]!)\r\n")
+        headerData.append("HTTP/1.1 \(status) \(HTTP.statusCodes[status]!)\r\n")
 
         // add the rest of our response headers
         for (name, value) in headers.nioHeaders {

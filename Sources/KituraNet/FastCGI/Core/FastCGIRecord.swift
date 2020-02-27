@@ -15,6 +15,7 @@ public struct FastCGIRecord {
         case params = 4       // FCGI_PARAMS
         case stdin = 5        // FCGI_STDIN
         case stdout = 6       // FCGI_STDOUT
+        case stderr = 7       // FCGI_STDERR
         case data = 8         // FCGI_DATA
     }
 
