@@ -8,7 +8,6 @@ class FastCGIRecordDecoderHandler<Decoder: FastCGIDecoder>: ChannelInboundHandle
     typealias InboundOut = FastCGIRecord
 
     public func channelRead(context: ChannelHandlerContext, data: NIOAny) {
-        print("FastCGIRecordDecoderHandler")
         let request = self.unwrapInboundIn(data)
         let requestData = request.getData(at: 0, length: request.readableBytes) ?? Data()
         try! Decoder.decode(from: Decoder.unwrap(requestData)).forEach {

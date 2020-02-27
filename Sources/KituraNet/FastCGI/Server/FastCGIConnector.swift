@@ -63,7 +63,6 @@ class FastCGIProxyHandler: ChannelInboundHandler {
     }
 
     func channelRead(context: ChannelHandlerContext, data: NIOAny) {
-        print("FastCGIProxyHandler")
         let responseParts = self.unwrapInboundIn(data)
         responseHandler(responseParts)
     }

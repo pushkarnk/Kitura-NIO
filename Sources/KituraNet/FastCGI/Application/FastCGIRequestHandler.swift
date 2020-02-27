@@ -25,7 +25,6 @@ class FastCGIRequestHandler: ChannelInboundHandler {
                 //report error
                 return
             }
-            print(record.content)
             serverRequest = FastCGIServerRequest(channel: context.channel)
             serverRequest?.parse(record)
             self.status = Status.requestStarted
@@ -34,16 +33,13 @@ class FastCGIRequestHandler: ChannelInboundHandler {
                 //report error
                 return
             }
-            print(record.content)
             serverRequest?.parse(record) 
             self.status = Status.headersComplete
-            print("Done parsing")
         case .stdin:
             guard case let .data(data) = record.content else {
                 //report error
                 return
             }
-            print(record.content)
             if data.count == 0 {
                 self.status = Status.requestComplete
                 serverResponse = FastCGIServerResponse(channel: context.channel, handler: self)

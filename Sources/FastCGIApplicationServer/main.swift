@@ -29,7 +29,6 @@ public class HelloWorldPageHandler: ServerDelegate {
             response.headers["Content-Length"] = [String(theBody.utf8.count)]
             try response.write(from: theBody)
             try response.end()
-            print("Wrote response")
         } catch {
             Log.error("Failed to send the response. Error = \(error)")
         }

@@ -65,9 +65,7 @@ class HTTPResponseParser {
     init(_ data: Data) {
         let lines = String(data: data, encoding: .utf8) ?? ""
         let components = lines.components(separatedBy: "\r\n")
-        print("parsing")
         parse(components)
-        print("parsed")
     }
     
     private func parse(_ lines: [String]) {
@@ -93,7 +91,6 @@ class HTTPResponseParser {
     }
     
     private func parseHeader(_ line: String) {
-        print("parseHeader: ", line)
         let components = line.split(separator: ":").map { $0.trimmingCharacters(in: .whitespaces)}
         headers[components[0]] = components[1]
     }
